@@ -1,0 +1,118 @@
+Selecturi simple:
+
+Afișează Programările
+"""SELECT Programari.Data, Programari.Ora, Programari.Status 
+                   FROM Programari
+                   JOIN BuletinAnalize ON Programari.BuletinID = BuletinAnalize.BuletinID
+                   JOIN Pacient ON BuletinAnalize.PacientID = Pacient.PacientID
+                   WHERE Pacient.CNP = ?"""
+
+Afiseaza pacientii si rezultatele analizelor
+"""SELECT p.Nume, p.Prenume, ba.Rezultat
+                   FROM Pacient p
+                   JOIN BuletinAnalize ba ON p.PacientID = ba.PacientID;"""
+
+Afiseaza programarile si personalul care le-a efectuat
+"""SELECT p.Nume, p.Prenume, pr.Data, pr.Ora, per.Nume, per.Prenume
+                   FROM Programari pr
+                   JOIN BuletinAnalize ba ON pr.BuletinID = ba.BuletinID
+                   JOIN Pacient p ON ba.PacientID = p.PacientID
+                   JOIN Personal per ON pr.PersonalID = per.PersonalID;"""
+
+Afiseaza pacientii care au facut analiza selectata din lista 
+"""SELECT p.Nume, p.Prenume
+                   FROM Pacient p
+                   JOIN BuletinAnalize ba1 ON p.PacientID = ba1.PacientID
+                   JOIN BA ON ba1.BuletinID = BA.BuletinID
+                   JOIN Analize a ON BA.AnalizeID = a.AnalizeID
+                   WHERE a.Nume = ?"""
+
+Afiseaza programarile efectuate
+"""SELECT pr.Data, pr.Ora, per.Nume, per.Prenume
+                   FROM Programari pr
+                   JOIN Personal per ON pr.PersonalID = per.PersonalID
+                   JOIN BuletinAnalize ba ON pr.BuletinID = ba.BuletinID
+                   WHERE pr.Status = 'Efectuata';"""
+
+Afiseaza programarile neefectuate
+"""SELECT pr.Data, pr.Ora, per.Nume, per.Prenume
+                   FROM Programari pr
+                   JOIN Personal per ON pr.PersonalID = per.PersonalID
+                   JOIN BuletinAnalize ba ON pr.BuletinID = ba.BuletinID
+                   WHERE pr.Status = 'Neefectuata';"""
+
+Afiseaza analizele dintre 2 date introduse
+"""SELECT p.Nume, p.Prenume, a.Nume AS NumeAnaliza, ba1.Data, ba1.Rezultat
+                   FROM Pacient p
+                   JOIN BuletinAnalize ba1 ON p.PacientID = ba1.PacientID
+                   JOIN BA ON ba1.BuletinID = BA.BuletinID
+                   JOIN Analize a ON BA.AnalizeID = a.AnalizeID
+                   WHERE ba1.Data BETWEEN ? AND ?"""
+ 
+Analizele cel mai frecvent efectuate
+ """SELECT a.Nume, COUNT(*) AS NumarDeOri
+                   FROM Analize a
+                   JOIN BA ON a.AnalizeID = BA.AnalizeID
+                   JOIN BuletinAnalize ba1 ON BA.BuletinID = ba1.BuletinID
+                   WHERE ba1.Data BETWEEN ? AND ?
+                   GROUP BY a.Nume
+                   ORDER BY COUNT(*) DESC"""
+
+
+Selecturi complexe:
+
+	Media de analize efectuate in functie de luna selectata:
+   SELECT AVG(NumarAnalize) AS MediaAnalizelor, Luna
+        FROM (
+            SELECT COUNT(ba.BuletinID) AS NumarAnalize, MONTH(ba.Data) AS Luna
+            FROM BuletinAnalize ba
+            GROUP BY ba.PacientID, MONTH(ba.Data)
+        ) AS AnalizePeLuna
+        WHERE Luna = ?
+        GROUP BY Luna;
+        """
+
+Afisarea Analizelor cu rezultat anormal si numarul acestora
+    SELECT a.Nume, COUNT(*) AS NumarRezultateAnormale
+            FROM Analize a
+            JOIN BA ON a.AnalizeID = BA.AnalizeID
+            JOIN BuletinAnalize ba1 ON BA.BuletinID = ba1.BuletinID
+            WHERE ba1.BuletinID IN (
+                SELECT BuletinID 
+                FROM BuletinAnalize
+                WHERE Rezultat = 'Anormal'
+            )
+            GROUP BY a.Nume
+            ORDER BY COUNT(*) DESC;
+        """)
+
+Afiseaza departamentele in ordine descrecatoare daca au personal care au efectuat mai mult de 2 programri
+"""
+        SELECT d.Nume, COUNT(*) AS NumarAngajati
+        FROM Departament d
+        JOIN Personal p ON d.DepartamentID = p.DepartamentID
+        WHERE d.DepartamentID IN (
+            SELECT p.DepartamentID
+            FROM Personal p
+            JOIN Programari pr ON p.PersonalID = pr.PersonalID
+            GROUP BY p.DepartamentID
+            HAVING COUNT(pr.ProgramareID) >= 2
+        )
+        GROUP BY d.Nume
+        ORDER BY COUNT(*) DESC;
+        """
+
+Afiseaza analiza cea mai scumpa si pacientii care au efectuat-o
+("""
+            SELECT p.Nume, p.Prenume, a.Nume AS Analiza, a.Pret
+            FROM Pacient p
+            JOIN BuletinAnalize ba1 ON p.PacientID = ba1.PacientID
+            JOIN BA ON ba1.BuletinID = BA.BuletinID
+            JOIN Analize a ON BA.AnalizeID = a.AnalizeID
+            WHERE a.Pret = (SELECT MAX(Pret) FROM Analize);
+        """)
+
+
+
+
+
